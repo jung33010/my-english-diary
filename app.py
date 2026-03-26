@@ -13,7 +13,6 @@ st.set_page_config(
 # ── 세션 상태 초기화 ───────────────────────────────────────────────
 for k, v in {
     "ai_result": None,
-    "tts_audio": None,
     "last_input": "",
     "session_tokens": 0,
     "session_cost_krw": 0.0,
@@ -24,7 +23,7 @@ for k, v in {
 # ── Secrets & 클라이언트 ──────────────────────────────────────────
 secrets_ok = False
 try:
-    from openai import OpenAI            # openai >= 1.0
+    from openai import OpenAI
     from notion_client import Client
 
     oai = OpenAI(api_key=st.secrets["openai_key"])
@@ -36,14 +35,13 @@ except ImportError as e:
 except Exception as e:
     st.error(f"Secrets 오류: {e}")
 
-# ── 비용 상수 (gpt-4o-mini · tts-1-hd · USD→KRW 1,380) ──────────
+# ── 비용 상수 (gpt-4o-mini · USD→KRW 1,380) ──────────────────────
 _KRW = 1_380
 _IN  = 0.150 / 1_000_000
 _OUT = 0.600 / 1_000_000
-_TTS = 0.030 / 1_000          # per char
 
-def add_cost(input_tok=0, output_tok=0, tts_chars=0):
-    usd = input_tok * _IN + output_tok * _OUT + tts_chars * _TTS
+def add_cost(input_tok=0, output_tok=0):
+    usd = input_tok * _IN + output_tok * _OUT
     st.session_state.session_cost_krw += usd * _KRW
     st.session_state.session_tokens   += input_tok + output_tok
 
@@ -79,7 +77,6 @@ html, body,
 [data-testid="stHeader"]  { background: transparent !important; }
 [data-testid="stSidebar"] { background: var(--navy2) !important; }
 
-/* ── 타이포 ── */
 h1,h2,h3,h4 {
     font-family: 'DM Serif Display', serif !important;
     color: var(--cream) !important;
@@ -88,7 +85,6 @@ p, div, span, label, li, td, th {
     font-family: 'Noto Sans KR', sans-serif !important;
 }
 
-/* ── 앱 타이틀 ── */
 .app-title {
     font-family: 'DM Serif Display', serif;
     font-size: 2.5rem;
@@ -110,8 +106,6 @@ p, div, span, label, li, td, th {
     border-radius: 2px;
     margin: 8px 0 16px 0;
 }
-
-/* ── 섹션 레이블 ── */
 .sec-label {
     font-size: 10.5px;
     font-weight: 600;
@@ -120,8 +114,6 @@ p, div, span, label, li, td, th {
     color: var(--gold);
     margin: 20px 0 8px 0;
 }
-
-/* ── 비교 박스 ── */
 .cmp-wrap { display:flex; gap:12px; margin:4px 0; }
 .cmp-box {
     flex:1; padding:14px 16px; border-radius:10px;
@@ -141,8 +133,6 @@ p, div, span, label, li, td, th {
     font-size:10px; font-weight:700; letter-spacing:0.08em;
     text-transform:uppercase; opacity:0.6; margin-bottom:6px;
 }
-
-/* ── 피드백 박스 ── */
 .feedback-box {
     background: rgba(201,150,58,0.07);
     border-left: 3px solid var(--gold);
@@ -152,8 +142,6 @@ p, div, span, label, li, td, th {
     line-height: 1.9;
     color: var(--cream2);
 }
-
-/* ── 원어민 표현 칩 ── */
 .chip-wrap { display:flex; flex-wrap:wrap; gap:8px; margin-top:4px; }
 .chip {
     background: rgba(201,150,58,0.13);
@@ -164,7 +152,36 @@ p, div, span, label, li, td, th {
     color: var(--gold2);
 }
 
-/* ── textarea / input ── */
+/* ElevenLabs 배너 */
+.el-banner {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: linear-gradient(135deg, rgba(201,150,58,0.10), rgba(76,201,160,0.07));
+    border: 1px solid rgba(201,150,58,0.25);
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin: 4px 0;
+    text-decoration: none;
+    transition: border-color 0.2s, background 0.2s;
+}
+.el-banner:hover {
+    border-color: rgba(201,150,58,0.55);
+    background: linear-gradient(135deg, rgba(201,150,58,0.16), rgba(76,201,160,0.10));
+}
+.el-icon { font-size: 26px; flex-shrink: 0; }
+.el-text-title {
+    font-size: 14px; font-weight: 600;
+    color: var(--cream); margin-bottom: 2px;
+}
+.el-text-sub {
+    font-size: 12px; color: var(--muted); line-height: 1.5;
+}
+.el-arrow {
+    margin-left: auto; font-size: 18px;
+    color: var(--gold); flex-shrink: 0;
+}
+
 textarea, .stTextArea textarea {
     background: var(--navy2) !important;
     color: var(--cream) !important;
@@ -179,8 +196,6 @@ textarea:focus, .stTextArea textarea:focus {
     box-shadow: 0 0 0 3px rgba(201,150,58,0.15) !important;
     outline: none !important;
 }
-
-/* ── 버튼 (primary) ── */
 .stButton > button {
     background: linear-gradient(135deg, var(--gold), var(--gold2)) !important;
     color: var(--navy) !important;
@@ -197,41 +212,25 @@ textarea:focus, .stTextArea textarea:focus {
     transform: translateY(-1px) !important;
 }
 .stButton > button:active { transform: translateY(0) !important; }
-
-/* ── 셀렉트박스 ── */
 [data-testid="stSelectbox"] > div > div {
     background: var(--navy2) !important;
     color: var(--cream) !important;
     border: 1px solid var(--navy3) !important;
     border-radius: 8px !important;
 }
-div[data-baseweb="popover"] {
-    background: var(--navy2) !important;
-}
+div[data-baseweb="popover"] { background: var(--navy2) !important; }
 div[data-baseweb="menu"] {
     background: var(--navy2) !important;
     border: 1px solid var(--navy3) !important;
 }
-
-/* ── 오디오 플레이어 ── */
-audio {
-    width: 100%;
-    border-radius: 8px;
-    accent-color: var(--gold);
-}
-
-/* ── 구분선 ── */
+audio { width: 100%; border-radius: 8px; accent-color: var(--gold); }
 hr { border-color: var(--navy3) !important; margin: 20px 0 !important; }
-
-/* ── 알림 ── */
 [data-testid="stAlert"] {
     background: var(--navy2) !important;
     border: 1px solid var(--navy3) !important;
     color: var(--text) !important;
     border-radius: var(--radius) !important;
 }
-
-/* ── 비용 바 ── */
 .cost-bar {
     background: var(--navy2);
     border: 1px solid var(--navy3);
@@ -250,8 +249,6 @@ hr { border-color: var(--navy3) !important; margin: 20px 0 !important; }
     font-size: 13px;
 }
 .cost-note { font-size: 10px; color: var(--navy3); margin-top: 3px; }
-
-/* ── 스크롤바 ── */
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: var(--navy); }
 ::-webkit-scrollbar-thumb { background: var(--navy3); border-radius: 3px; }
@@ -288,7 +285,6 @@ with c1:
 with c2:
     if st.button("↺ 초기화", use_container_width=True):
         st.session_state.ai_result = None
-        st.session_state.tts_audio = None
         st.rerun()
 
 # ═══════════════════════════════════════════════════════════════════
@@ -326,7 +322,6 @@ if analyze_btn and user_input.strip():
                 result = json.loads(resp.choices[0].message.content)
                 st.session_state.ai_result = result
                 st.session_state.last_input = user_input
-                st.session_state.tts_audio  = None
             except Exception as e:
                 st.error(f"API 오류: {e}")
 
@@ -367,39 +362,20 @@ if st.session_state.ai_result:
 
     st.markdown("<hr>", unsafe_allow_html=True)
 
-    # ── 4. TTS ───────────────────────────────────────────────────
+    # ── 4. TTS — ElevenLabs 링크 ─────────────────────────────────
     st.markdown('<div class="sec-label">🔊 TTS 듣기</div>', unsafe_allow_html=True)
+    st.markdown("""
+    <a class="el-banner" href="https://elevenlabs.io" target="_blank">
+        <div class="el-icon">🎙️</div>
+        <div>
+            <div class="el-text-title">ElevenLabs — AI 음성 생성</div>
+            <div class="el-text-sub">교정된 문장을 복사해서 원어민 발음으로 들어보세요.<br>무료 플랜으로도 충분히 사용 가능해요.</div>
+        </div>
+        <div class="el-arrow">→</div>
+    </a>
+    """, unsafe_allow_html=True)
 
-    tts_options = {"✅ 교정된 문장": corr}
-    for i, s in enumerate(suggs, 1):
-        tts_options[f"🌟 원어민 표현 {i}"] = s
-
-    col_a, col_b, col_c = st.columns([3, 2, 1])
-    with col_a:
-        tts_choice = st.selectbox("읽어줄 문장", list(tts_options.keys()), label_visibility="collapsed")
-    with col_b:
-        tts_voice = st.selectbox("목소리", ["nova", "alloy", "echo", "fable", "onyx", "shimmer"], label_visibility="collapsed")
-    with col_c:
-        tts_btn = st.button("▶ 듣기", use_container_width=True)
-
-    if tts_btn and secrets_ok:
-        text_to_speak = tts_options[tts_choice]
-        with st.spinner("음성 생성 중..."):
-            try:
-                tts_resp = oai.audio.speech.create(
-                    model="tts-1-hd",
-                    voice=tts_voice,
-                    input=text_to_speak,
-                )
-                st.session_state.tts_audio = tts_resp.content
-                add_cost(tts_chars=len(text_to_speak))
-            except Exception as e:
-                st.error(f"TTS 오류: {e}")
-
-    if st.session_state.tts_audio:
-        st.audio(st.session_state.tts_audio, format="audio/mp3")
-
-    # ── 5. 녹음 & 재생 (브라우저 메모리 only) ────────────────────
+    # ── 5. 녹음 & 재생 ───────────────────────────────────────────
     st.markdown('<div class="sec-label">🎙️ 내 발음 녹음 & 재생</div>', unsafe_allow_html=True)
     st.caption("💡 녹음은 서버에 저장되지 않습니다. 페이지를 벗어나면 사라져요.")
 
@@ -431,9 +407,7 @@ if st.session_state.ai_result:
         0%,100%{opacity:1;transform:scale(1)}
         50%{opacity:0.35;transform:scale(1.4)}
     }
-    #status {
-        margin-top:8px; font-size:12px; color:#8fa3b8; min-height:18px;
-    }
+    #status { margin-top:8px; font-size:12px; color:#8fa3b8; min-height:18px; }
     audio { width:100%; margin-top:10px; border-radius:8px; accent-color:#c9963a; }
     </style>
 
@@ -450,7 +424,6 @@ if st.session_state.ai_result:
 
     <script>
     let mr, chunks=[], blob=null, recOn=false;
-
     async function toggleRecord(){
         const btn=document.getElementById('btnRec');
         const lbl=document.getElementById('recLabel');
@@ -476,9 +449,7 @@ if st.session_state.ai_result:
                 btn.classList.add('active'); lbl.textContent='⏹ 중지';
                 sts.textContent='🔴 녹음 중...';
             } catch(e){ sts.textContent='❌ 마이크 오류: '+e.message; }
-        } else {
-            mr.stop(); recOn=false;
-        }
+        } else { mr.stop(); recOn=false; }
     }
     function playBack(){ document.getElementById('player').play(); }
     function downloadRec(){
@@ -511,20 +482,15 @@ if st.session_state.ai_result:
                         "Date": {"date": {"start": date_str}},
                     },
                     children=[
-                        # ① 헤더
                         {"object":"block","type":"heading_2","heading_2":{
                             "rich_text":[{"type":"text","text":{
                                 "content":f"📖 {date_str}  {time_str}  —  영어 학습 일기"}}]}},
                         {"object":"block","type":"divider","divider":{}},
-
-                        # ② 원문
                         {"object":"block","type":"heading_3","heading_3":{
                             "rich_text":[{"type":"text","text":{"content":"✍️ 오늘의 일기"}}]}},
                         {"object":"block","type":"paragraph","paragraph":{
                             "rich_text":[{"type":"text","text":{"content": diary_text}}]}},
                         {"object":"block","type":"divider","divider":{}},
-
-                        # ③ 비교
                         {"object":"block","type":"heading_3","heading_3":{
                             "rich_text":[{"type":"text","text":{"content":"📝 문장 비교"}}]}},
                         {"object":"block","type":"callout","callout":{
@@ -534,26 +500,20 @@ if st.session_state.ai_result:
                             "rich_text":[{"type":"text","text":{"content":f"교정된 문장\n{corr}"},
                                           "annotations":{"bold":True}}],
                             "icon":{"emoji":"✅"},"color":"green_background"}},
-
-                        # ④ 피드백
                         {"object":"block","type":"heading_3","heading_3":{
                             "rich_text":[{"type":"text","text":{"content":"💬 AI 피드백"}}]}},
                         {"object":"block","type":"quote","quote":{
                             "rich_text":[{"type":"text","text":{"content": fb}}]}},
-
-                        # ⑤ 원어민 표현
                         {"object":"block","type":"heading_3","heading_3":{
                             "rich_text":[{"type":"text","text":{"content":"🌟 원어민 표현 추천"}}]}},
                         *[{"object":"block","type":"bulleted_list_item","bulleted_list_item":{
                               "rich_text":[{"type":"text","text":{"content": s}}]}}
                           for s in suggs],
                         {"object":"block","type":"divider","divider":{}},
-
-                        # ⑥ 메타
                         {"object":"block","type":"paragraph","paragraph":{
                             "rich_text":[{"type":"text","text":{
                                 "content":(
-                                    f"🤖 gpt-4o-mini · tts-1-hd  │  "
+                                    f"🤖 gpt-4o-mini  │  "
                                     f"토큰: {st.session_state.session_tokens:,}  │  "
                                     f"비용: ₩{st.session_state.session_cost_krw:.2f}"
                                 )},
@@ -575,7 +535,7 @@ st.markdown(f"""
     <div style="color:var(--muted);">이번 세션</div>
     <div style="text-align:right;">
         <div class="cost-val">{tok:,} tokens &nbsp;·&nbsp; ₩{cost:.2f}</div>
-        <div class="cost-note">gpt-4o-mini · tts-1-hd · USD→KRW 1,380 기준</div>
+        <div class="cost-note">gpt-4o-mini · USD→KRW 1,380 기준</div>
     </div>
 </div>
 """, unsafe_allow_html=True)
